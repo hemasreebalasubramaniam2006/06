@@ -1,0 +1,99 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Simulated dataset
+data = {
+    'User_ID': [f'U{i:03}' for i in range(1, 16)],
+    'Age': [25, 30, 22, 35, 28, 40, 21, 36, 29, 23, 38, 33, 27, 24, 31],
+    'Gender': ['F', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F', 'F', 'M', 'M', 'F', 'M', 'F'],
+    'Preferred_Genre': ['Action', 'Romance', 'Comedy', 'Thriller', 'Horror', 'Adventure', 'Animation', 'Documentary',
+                        'Crime', 'Romance', 'Sci-Fi', 'Drama', 'Action', 'Fantasy', 'Musical'],
+    'Recommended_Movie': ['Edge of Tomorrow', 'The Notebook', 'Paddington 2', 'Gone Girl', 'The Conjuring',
+                          'The Lord of the Rings', 'Toy Story 4', 'Free Solo', 'The Godfather',
+                          '10 Things I Hate About You', 'Interstellar', 'The King\'s Speech', 'John Wick',
+                          'Beauty and the Beast', 'La La Land'],
+    'Liked': [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1]
+}
+
+df = pd.DataFrame(data)
+
+# ----------------------------- #
+# Exploratory Data Analysis
+# ----------------------------- #
+
+print("Dataset Overview:")
+print(df.head())
+
+print("\nDescriptive Stats:")
+print(df.describe(include='all'))
+
+# Countplot of genre preference
+plt.figure(figsize=(10,5))
+sns.countplot(data=df, x='Preferred_Genre', order=df['Preferred_Genre'].value_counts().index)
+plt.title('Preferred Genre Distribution')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Liked distribution
+sns.countplot(data=df, x='Liked', palette='Set2')
+plt.title('Movie Liked Distribution')
+plt.xticks([0, 1], ['No', 'Yes'])
+plt.show()
+
+# Age vs Liked
+plt.figure(figsize=(8,5))
+sns.boxplot(data=df, x='Liked', y='Age')
+plt.title('Age Distribution by Movie Liking')
+plt.xticks([0, 1], ['No', 'Yes'])
+plt.show()
+
+# ----------------------------- #
+# Data Preprocessing
+# ----------------------------- #
+
+le_gender = LabelEncoder()
+le_genre = LabelEncoder()
+
+df['Gender'] = le_gender.fit_transform(df['Gender'])
+df['Preferred_Genre'] = le_genre.fit_transform(df['Preferred_Genre'])
+
+features = ['Age', 'Gender', 'Preferred_Genre']
+X = df[features]
+y = df['Liked']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# ----------------------------- #
+# Model Building
+# ----------------------------- #
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# ----------------------------- #
+# Feature Importance
+# ----------------------------- #
+
+importances = model.feature_importances_
+feat_imp = pd.Series(importances, index=features).sort_values(ascending=False)
+
+plt.figure(figsize=(6,4))
+sns.barplot(x=feat_imp, y=feat_imp.index, palette='Blues_d')
+plt.title('Feature Importance')
+plt.tight_layout()
+plt.show()
